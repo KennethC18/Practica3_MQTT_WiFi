@@ -28,6 +28,10 @@
 #include "FreeRTOS.h"
 
 #include "fsl_power.h"
+
+#include "Drivers/BUTTON.h"
+
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -388,11 +392,18 @@ static void main_task(void *arg)
 
     init_flash_storage(CONNECTION_INFO_FILENAME);
 
-    char ssid[WPL_WIFI_SSID_LENGTH];
-    char password[WPL_WIFI_PASSWORD_LENGTH];
-    char security[WIFI_SECURITY_LENGTH];
+    char ssid[WPL_WIFI_SSID_LENGTH] = "";
+    char password[WPL_WIFI_PASSWORD_LENGTH] = "";
+    char security[WIFI_SECURITY_LENGTH] = "";
 
-    result = get_saved_wifi_credentials(CONNECTION_INFO_FILENAME, ssid, password, security);
+    if(BUTTON_IsPressed()){
+    	PRINTF("Reseting WiFi credentials\n\r");
+        result = reset_saved_wifi_credentials(CONNECTION_INFO_FILENAME);
+    }
+    else{
+    	PRINTF("Loading saved WiFi credentials\n\r");
+		result = get_saved_wifi_credentials(CONNECTION_INFO_FILENAME, ssid, password, security);
+    }
 
     if (result == 0 && strcmp(ssid, "") != 0)
     {
@@ -616,6 +627,7 @@ static uint32_t CleanUpClient()
 
     return 0;
 }
+
 /*!
  * @brief Main function.
  */
@@ -623,6 +635,8 @@ int main(void)
 {
     /* Initialize the hardware */
     BOARD_InitBootPins();
+    BUTTON_Init(NULL);
+
     if (BOARD_IS_XIP())
     {
         BOARD_BootClockLPR();
