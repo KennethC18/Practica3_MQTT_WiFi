@@ -10,21 +10,18 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "mqtt_freertos.h"
-
+#include <MQTT.h>
 #include "board.h"
 #include "fsl_silicon_id.h"
 
 #include "lwip/opt.h"
 #include "lwip/api.h"
-#include "mqtt.h"
+#include "Drivers/mqtt.h"
 #include "lwip/tcpip.h"
 
-// FIXME cleanup
-
-/*******************************************************************************
- * Definitions
- ******************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include "Drivers/LED.h"
 
 /*! @brief MQTT server host name or IP address. */
 #ifndef EXAMPLE_MQTT_SERVER_HOST
@@ -85,6 +82,9 @@ static ip_addr_t mqtt_addr;
 /*! @brief Indicates connection to MQTT broker. */
 static volatile bool connected = false;
 
+uint8_t received_topic;
+
+uint8_t r,g,b;
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -106,6 +106,82 @@ static void mqtt_topic_subscribed_cb(void *arg, err_t err)
     }
 }
 
+static void check_topic(const char *topic){
+	uint8_t i = 0;
+	received_topic = 0;
+
+	while(topic[i] != 0){
+#if defined(DEVICE1) && !defined(DEVICE2)
+		if(topic[i] == TOPIC4[i]){
+			received_topic = 4;
+		}
+		else if(topic[i] == TOPIC6[i]){
+			received_topic = 6;
+		}
+#endif
+#if defined(DEVICE2) && !defined(DEVICE1)
+		if(topic[i] == TOPIC3[i]){
+			received_topic = 3;
+		}
+		else if(topic[i] == TOPIC6[i]){
+			received_topic = 5;
+		}
+#endif
+		i++;
+	}
+}
+
+void manage_night_light(const uint8_t *data){
+	r = g = b = 0;
+
+	if (data == NULL) {
+		return;
+	}
+
+	char buffer[32];
+	strncpy(buffer, (char *)data, sizeof(buffer) - 1);
+	buffer[sizeof(buffer) - 1] = '\0';
+
+	if (strncmp(buffer, "rgb(", 4) != 0) {
+		return;
+	}
+
+	char *ptr = buffer + 4;
+	int values[3] = {0, 0, 0};
+	int current_value = 0;
+	int index = 0;
+
+	while (*ptr && index < 3) {
+		if (*ptr == ' ' || *ptr == ',') {
+			ptr++;
+			continue;
+		}
+
+		if (*ptr == ')') {
+			break;
+		}
+
+		if (*ptr >= '0' && *ptr <= '9') {
+			current_value = current_value * 10 + (*ptr - '0');
+			ptr++;
+		} else {
+			return;
+		}
+
+		if (*ptr == ',' || *ptr == ' ' || *ptr == ')') {
+			values[index] = current_value;
+			current_value = 0;
+			index++;
+		}
+	}
+
+	(values[0] == 255) ? (r = LOGIC_LED_ON) : (r = LOGIC_LED_OFF);
+	(values[1] == 255) ? (g = LOGIC_LED_ON) : (g = LOGIC_LED_OFF);
+	(values[2] == 255) ? (b = LOGIC_LED_ON) : (b = LOGIC_LED_OFF);
+
+	LED_Set(r, g, b);
+}
+
 /*!
  * @brief Called when there is a message on a subscribed topic.
  */
@@ -114,6 +190,7 @@ static void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len
     LWIP_UNUSED_ARG(arg);
 
     PRINTF("Received %u bytes from the topic \"%s\": \"", tot_len, topic);
+    check_topic(topic);
 }
 
 /*!
@@ -137,6 +214,23 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t f
         }
     }
 
+#if defined(DEVICE1) && !defined(DEVICE2)
+        if(received_topic == 4){
+//        	manage_smoke_topic();
+        }
+        else if(received_topic == 6){
+        	manage_night_light(data);
+        }
+#endif
+#if defined(DEVICE2) && !defined(DEVICE1)
+        if(received_topic == 3){
+//        	manage_temp_topic();
+        }
+        else if(received_topic == 5){
+//        	manage_music_topic(data);
+        }
+#endif
+
     if (flags & MQTT_DATA_FLAG_LAST)
     {
         PRINTF("\"\r\n");
@@ -148,8 +242,14 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t f
  */
 static void mqtt_subscribe_topics(mqtt_client_t *client)
 {
-    static const char *topics[] = {"lwip_topic/#", "lwip_other/#"};
-    int qos[]                   = {0, 1};
+#if defined(DEVICE1) && !defined(DEVICE2)
+    static const char *topics[] = {"smoke_detect/#", "night_light/#"};
+#endif
+#if defined(DEVICE2) && !defined(DEVICE1)
+    static const char *topics[] = {"temp_measure/#", "relax_music/#"};
+#endif
+
+    int qos[]                   = {0, 0};
     err_t err;
     int i;
 
@@ -252,14 +352,27 @@ static void mqtt_message_published_cb(void *arg, err_t err)
  */
 static void publish_message(void *ctx)
 {
-    static const char *topic   = "lwip_topic/100";
-    static const char *message = "message from board";
+#if defined(DEVICE1) && !defined(DEVICE2)
+	static const char *topic1   = TOPIC1;
+	static const char *message1 = "Movimiento detectado";
+
+	static const char *topic2   = TOPIC3;
+	static const char *message2 = "Temperatura 25 °C";
+#endif
+#if defined(DEVICE2) && !defined(DEVICE1)
+	static const char *topic1   = TOPIC2;
+	static const char *message1 = "Ruido detectado";
+
+	static const char *topic2   = TOPIC4;
+	static const char *message2 = "SMOKE";
+	static const char *message2 = "NO_SMOKE";
+#endif
 
     LWIP_UNUSED_ARG(ctx);
 
-    PRINTF("Going to publish to the topic \"%s\"...\r\n", topic);
+    PRINTF("Going to publish to the topic \"%s\"...\r\n", topic2);
 
-    mqtt_publish(mqtt_client, topic, message, strlen(message), 1, 0, mqtt_message_published_cb, (void *)topic);
+    mqtt_publish(mqtt_client, topic2, message2, strlen(message2), 1, 0, mqtt_message_published_cb, (void *)topic2);
 }
 
 /*!
@@ -307,22 +420,38 @@ static void app_thread(void *arg)
     }
 
     /* Publish some messages */
-    for (i = 0; i < 5;)
-    {
-        if (connected)
-        {
-            err = tcpip_callback(publish_message, NULL);
-            if (err != ERR_OK)
-            {
-                PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
-            }
-            i++;
-        }
-
-        sys_msleep(1000U);
-    }
+//    for (i = 0; i < 5;)
+//    {
+//        if (connected)
+//        {
+//            err = tcpip_callback(publish_message, NULL);
+//            if (err != ERR_OK)
+//            {
+//                PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+//            }
+//            i++;
+//        }
+//
+//        sys_msleep(1000U);
+//    }
 
     vTaskDelete(NULL);
+}
+
+static void button_pressed_callback(void)
+{
+    if (connected)
+    {
+        err_t err = tcpip_callback(publish_message, NULL);
+        if (err != ERR_OK)
+        {
+            PRINTF("Failed to invoke publishing of temperature message: %d.\r\n", err);
+        }
+    }
+    else
+    {
+        PRINTF("Cannot publish: Not connected to MQTT broker.\r\n");
+    }
 }
 
 static void generate_client_id(void)
@@ -397,6 +526,8 @@ void mqtt_freertos_run_thread(struct netif *netif)
         {
         }
     }
+
+    LED_Init();
 
     generate_client_id();
 
