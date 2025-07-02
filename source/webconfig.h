@@ -18,11 +18,11 @@
 
 /* Common Wi-Fi parameters */
 #ifndef WIFI_SSID
-#define WIFI_SSID "nxp_configuration_access_point"
+#define WIFI_SSID "Kenneth_Hector_AP"
 #endif
 
 #ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "NXP0123456789"
+#define WIFI_PASSWORD "0123456789"
 #endif
 
 #define WIFI_NETWORK_LABEL "MyWifi"

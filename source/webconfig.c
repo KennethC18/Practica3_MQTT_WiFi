@@ -30,6 +30,7 @@
 #include "fsl_power.h"
 
 #include "Drivers/BUTTON.h"
+#include "Drivers/mqtt_freertos.h"
 
 
 /*******************************************************************************
@@ -600,6 +601,8 @@ static uint32_t SetBoardToClient()
             char ip[16];
             WPL_GetIP(ip, 1);
             PRINTF(" Now join that network on your device and connect to this IP: %s\r\n", ip);
+
+            mqtt_freertos_run_thread(netif_default);
         }
     }
     return 0;
