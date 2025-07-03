@@ -20,18 +20,22 @@ void BUTTON_Init(button_callback_t callback)
     s_buttonCallback = callback;
 
     IO_MUX_SetPinMux(IO_MUX_GPIO11);
+    IO_MUX_SetPinMux(IO_MUX_GPIO19);
+    IO_MUX_SetPinMux(IO_MUX_GPIO7);
 
     GPIO_PortInit(GPIO, BUTTON_SW_PORT);
     GPIO_PinInit(GPIO, BUTTON_SW_PORT, BUTTON_SW_PIN, &sw_config);
+    GPIO_PinInit(GPIO, BUTTON_SW_PORT, BTN_GPIO_19, &sw_config);
+    GPIO_PinInit(GPIO, BUTTON_SW_PORT, BTN_GPIO_7, &sw_config);
 
     EnableIRQ(BUTTON_IRQ);
     GPIO_SetPinInterruptConfig(GPIO, BUTTON_SW_PORT, BUTTON_SW_PIN, &config);
     GPIO_PinEnableInterrupt(GPIO, BUTTON_SW_PORT, BUTTON_SW_PIN, 0);
 }
 
-bool BUTTON_IsPressed(void)
+bool BUTTON_IsPressed(uint8_t button_pin)
 {
-    return (BUTTON_CONNECTED_LEVEL == GPIO_PinRead(GPIO, BUTTON_SW_PORT, BUTTON_SW_PIN));
+    return (BUTTON_CONNECTED_LEVEL == GPIO_PinRead(GPIO, BUTTON_SW_PORT, button_pin));
 }
 
 bool BUTTON_GetInterruptFlag(void)

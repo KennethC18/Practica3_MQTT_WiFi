@@ -16,6 +16,10 @@
 #define BUTTON_IRQ                GPIO_INTA_IRQn
 #define BUTTON_CONNECTED_LEVEL    0U
 
+#define BTN_GPIO_19				  19
+#define BTN_GPIO_7				  7
+#define BTN_BOARD_SW2			  11
+
 /*! @brief Button interrupt callback function type */
 typedef void (*button_callback_t)(void);
 
@@ -29,9 +33,10 @@ void BUTTON_Init(button_callback_t callback);
 /*!
  * @brief Check if the button is pressed.
  *
- * @return bool True if the button is pressed, false otherwise.
+ * @param 	uint8_t Specifies the desired pin to read.
+ * @return 	bool True if the button is pressed, false otherwise.
  */
-bool BUTTON_IsPressed(void);
+bool BUTTON_IsPressed(uint8_t button_pin);
 
 /*!
  * @brief Get the current state of the button interrupt flag.

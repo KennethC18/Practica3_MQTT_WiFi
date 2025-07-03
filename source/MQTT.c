@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include "Drivers/LED.h"
 #include "Drivers/GPIO.h"
+#include "Drivers/BUTTON.h"
 
 /*! @brief MQTT server host name or IP address. */
 #ifndef EXAMPLE_MQTT_SERVER_HOST
@@ -216,11 +217,11 @@ void manage_temp_topic(const uint8_t *data){
 void manage_music_topic(const uint8_t *data){
 	if (strncmp(data, "OFF", 2) == 0) {
 		LED_Set(LED_RED_COLOUR);
-		GPIO_PIN_Clear(GPIO9);
+//		GPIO_PIN_Clear(GPIO1);
 	}
 	else{
 		LED_Set(LED_GREEN_COLOUR);
-		GPIO_PIN_Set(GPIO9);
+//		GPIO_PIN_Set(GPIO1);
 	}
 }
 #endif
@@ -534,9 +535,8 @@ static void app_thread(void *arg)
 	}
 #endif
 #if defined(DEVICE2) && !defined(DEVICE1)
-    for (i = 0; i < 3;)
-	{
-		if (connected)
+    while(1){
+    	if (connected && BUTTON_IsPressed(BTN_GPIO_19))
 		{
 			err = tcpip_callback(publish_message1, NULL);
 			if (err != ERR_OK)
@@ -545,9 +545,7 @@ static void app_thread(void *arg)
 			}
 			i++;
 		}
-
-		sys_msleep(1000U);
-	}
+    }
     for (i = 0; i < 3;)
 	{
 		if (connected)
@@ -669,9 +667,10 @@ void mqtt_freertos_run_thread(struct netif *netif)
         {
         }
     }
+    GPIO_PIN_Init();
 
     LED_Init();
-    GPIO_PIN_Init();
+    LED_Set(LED_WHITE_COLOUR);
 
     generate_client_id();
 

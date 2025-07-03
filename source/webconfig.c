@@ -397,7 +397,7 @@ static void main_task(void *arg)
     char password[WPL_WIFI_PASSWORD_LENGTH] = "";
     char security[WIFI_SECURITY_LENGTH] = "";
 
-    if(BUTTON_IsPressed()){
+    if(BUTTON_IsPressed(BTN_BOARD_SW2)){
     	PRINTF("Reseting WiFi credentials\n\r");
         result = reset_saved_wifi_credentials(CONNECTION_INFO_FILENAME);
     }

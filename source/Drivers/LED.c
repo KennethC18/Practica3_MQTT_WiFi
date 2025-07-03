@@ -18,7 +18,7 @@ void LED_Init(void) {
     };
 
     /* Initialize GPIO port */
-    GPIO_PortInit(GPIO, LED_GPIO_PORT);
+//    GPIO_PortInit(GPIO, LED_GPIO_PORT);
 
     IO_MUX_SetPinMux(IO_MUX_GPIO0);
 	IO_MUX_SetPinMux(IO_MUX_GPIO1);
