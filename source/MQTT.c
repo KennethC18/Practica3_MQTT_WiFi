@@ -466,7 +466,7 @@ static void app_thread(void *arg)
 {
     struct netif *netif = (struct netif *)arg;
     err_t err;
-    int i;
+    int i = 1;
 
     PRINTF("\r\nIPv4 Address     : %s\r\n", ipaddr_ntoa(&netif->ip_addr));
     PRINTF("IPv4 Subnet mask : %s\r\n", ipaddr_ntoa(&netif->netmask));
@@ -536,44 +536,34 @@ static void app_thread(void *arg)
 #endif
 #if defined(DEVICE2) && !defined(DEVICE1)
     while(1){
-    	if (connected && BUTTON_IsPressed(BTN_GPIO_19))
-		{
-			err = tcpip_callback(publish_message1, NULL);
-			if (err != ERR_OK)
-			{
-				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+    	if(connected){
+			if (BUTTON_IsPressed(BTN_GPIO_19)){
+				err = tcpip_callback(publish_message1, NULL);
+				if (err != ERR_OK)
+				{
+					PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+				}
 			}
-			i++;
-		}
+			else if (BUTTON_IsPressed(BTN_GPIO_7)){
+				if(i == 1){
+					err = tcpip_callback(publish_message2, NULL);
+					if (err != ERR_OK)
+					{
+						PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+					}
+					i = 0;
+				}
+				else{
+					err = tcpip_callback(publish_message3, NULL);
+					if (err != ERR_OK)
+					{
+						PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+					}
+					i = 1;
+				}
+			}
+    	}
     }
-    for (i = 0; i < 3;)
-	{
-		if (connected)
-		{
-			err = tcpip_callback(publish_message2, NULL);
-			if (err != ERR_OK)
-			{
-				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
-			}
-			i++;
-		}
-
-		sys_msleep(1000U);
-	}
-    for (i = 0; i < 3;)
-	{
-		if (connected)
-		{
-			err = tcpip_callback(publish_message3, NULL);
-			if (err != ERR_OK)
-			{
-				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
-			}
-			i++;
-		}
-
-		sys_msleep(1000U);
-	}
 #endif
 
     vTaskDelete(NULL);
