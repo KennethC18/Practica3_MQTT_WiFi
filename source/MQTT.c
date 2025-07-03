@@ -139,11 +139,11 @@ static void check_topic(const char *topic){
 void manage_smoke_topic(const uint8_t *data){
 	if (strncmp(data, "NO_SMOKE", 8) == 0) {
 //		LED_Set(LED_RED_COLOUR);
-		GPIO_PIN_Clear(GPIO10);
+		GPIO_PIN_Set(GPIO10);
 	}
 	else{
 //		LED_Set(LED_GREEN_COLOUR);
-		GPIO_PIN_Set(GPIO10);
+		GPIO_PIN_Clear(GPIO10);
 	}
 }
 
@@ -211,7 +211,7 @@ void manage_temp_topic(const uint8_t *data){
 	if(stringToInt(data) >= 28){
 		GPIO_PIN_Clear(GPIO10);
 	}
-	else{
+	else if(stringToInt(data) < 28){
 		GPIO_PIN_Set(GPIO10);
 	}
 

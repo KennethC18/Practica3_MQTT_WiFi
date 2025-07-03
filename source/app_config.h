@@ -16,3 +16,7 @@
 
 #define WIFI_BT_TX_PWR_LIMITS "wlan_txpwrlimit_cfg_WW_rw610.h"
 #define CONFIG_BT_SNOOP 1
+
+#define DEVICE1
+
+//#define DEVICE2

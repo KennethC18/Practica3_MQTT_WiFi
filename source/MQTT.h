@@ -11,9 +11,7 @@
 
 #include "lwip/netif.h"
 
-#define DEVICE1
-
-//#define DEVICE2
+#include "app_config.h"
 
 #if defined(DEVICE1) && !defined(DEVICE2)
 #define TOPIC1 "motion_detect"

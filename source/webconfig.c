@@ -661,6 +661,14 @@ int main(void)
     POWER_ConfigCauInSleep(false);
     BOARD_InitSleepPinConfig();
 
+    uint8_t i = 5;
+    while(i > 0){
+    	PRINTF("Presione [SW2] para resetear datos de WiFi o espere %d segundos para continuar\r",i);
+		SDK_DelayAtLeastUs(1000000, BOARD_BOOTCLOCKRUN_HCLK);
+    	i--;
+    }
+    PRINTF("\n\r");
+
     /* Create the main Task */
     if (xTaskCreate(main_task, "main_task", 2048, NULL, configMAX_PRIORITIES - 4, &g_BoardState.mainTask) != pdPASS)
     {

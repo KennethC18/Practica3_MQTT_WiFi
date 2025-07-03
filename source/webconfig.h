@@ -8,6 +8,8 @@
 #ifndef _WEBCONFIG_H_
 #define _WEBCONFIG_H_
 
+#include "app_config.h"
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -17,8 +19,16 @@
 #define WIFI_SECURITY_LENGTH  63
 
 /* Common Wi-Fi parameters */
+#if defined(DEVICE1) && !defined(DEVICE2)
 #ifndef WIFI_SSID
-#define WIFI_SSID "Kenneth_Hector_AP"
+#define WIFI_SSID "DEVICE1_AP"
+#endif
+#endif
+
+#if defined(DEVICE2) && !defined(DEVICE1)
+#ifndef WIFI_SSID
+#define WIFI_SSID "DEVICE2_AP"
+#endif
 #endif
 
 #ifndef WIFI_PASSWORD
