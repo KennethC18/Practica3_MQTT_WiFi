@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Drivers/LED.h"
+#include "Drivers/GPIO.h"
 
 /*! @brief MQTT server host name or IP address. */
 #ifndef EXAMPLE_MQTT_SERVER_HOST
@@ -123,7 +124,7 @@ static void check_topic(const char *topic){
 		if(topic[i] == TOPIC3[i]){
 			received_topic = 3;
 		}
-		else if(topic[i] == TOPIC6[i]){
+		else if(topic[i] == TOPIC5[i]){
 			received_topic = 5;
 		}
 #endif
@@ -131,12 +132,20 @@ static void check_topic(const char *topic){
 	}
 }
 
+#if defined(DEVICE1) && !defined(DEVICE2)
+void manage_smoke_topic(const uint8_t *data){
+	if (strncmp(data, "NO_SMOKE", 8) == 0) {
+//		LED_Set(LED_RED_COLOUR);
+		GPIO_PIN_Clear(GPIO10);
+	}
+	else{
+//		LED_Set(LED_GREEN_COLOUR);
+		GPIO_PIN_Set(GPIO10);
+	}
+}
+
 void manage_night_light(const uint8_t *data){
 	r = g = b = 0;
-
-	if (data == NULL) {
-		return;
-	}
 
 	char buffer[32];
 	strncpy(buffer, (char *)data, sizeof(buffer) - 1);
@@ -181,6 +190,40 @@ void manage_night_light(const uint8_t *data){
 
 	LED_Set(r, g, b);
 }
+#endif
+
+#if defined(DEVICE2) && !defined(DEVICE1)
+uint8_t stringToInt(const uint8_t *str) {
+    uint8_t result = 0;
+
+    while (*str >= '0' && *str <= '9') {
+        result = result * 10 + (*str - '0');
+        str++;
+    }
+
+    return result;
+}
+
+void manage_temp_topic(const uint8_t *data){
+	if(stringToInt(data) >= 28){
+		GPIO_PIN_Clear(GPIO10);
+	}
+	else{
+		GPIO_PIN_Set(GPIO10);
+	}
+
+}
+void manage_music_topic(const uint8_t *data){
+	if (strncmp(data, "OFF", 2) == 0) {
+		LED_Set(LED_RED_COLOUR);
+		GPIO_PIN_Clear(GPIO9);
+	}
+	else{
+		LED_Set(LED_GREEN_COLOUR);
+		GPIO_PIN_Set(GPIO9);
+	}
+}
+#endif
 
 /*!
  * @brief Called when there is a message on a subscribed topic.
@@ -216,7 +259,7 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t f
 
 #if defined(DEVICE1) && !defined(DEVICE2)
         if(received_topic == 4){
-//        	manage_smoke_topic();
+        	manage_smoke_topic(data);
         }
         else if(received_topic == 6){
         	manage_night_light(data);
@@ -224,10 +267,10 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t f
 #endif
 #if defined(DEVICE2) && !defined(DEVICE1)
         if(received_topic == 3){
-//        	manage_temp_topic();
+        	manage_temp_topic(data);
         }
         else if(received_topic == 5){
-//        	manage_music_topic(data);
+        	manage_music_topic(data);
         }
 #endif
 
@@ -350,23 +393,23 @@ static void mqtt_message_published_cb(void *arg, err_t err)
 /*!
  * @brief Publishes a message. To be called on tcpip_thread.
  */
-static void publish_message(void *ctx)
-{
 #if defined(DEVICE1) && !defined(DEVICE2)
+static void publish_message1(void *ctx)
+{
 	static const char *topic1   = TOPIC1;
 	static const char *message1 = "Movimiento detectado";
 
-	static const char *topic2   = TOPIC3;
-	static const char *message2 = "Temperatura 25 °C";
-#endif
-#if defined(DEVICE2) && !defined(DEVICE1)
-	static const char *topic1   = TOPIC2;
-	static const char *message1 = "Ruido detectado";
+    LWIP_UNUSED_ARG(ctx);
 
-	static const char *topic2   = TOPIC4;
-	static const char *message2 = "SMOKE";
-	static const char *message2 = "NO_SMOKE";
-#endif
+    PRINTF("Going to publish to the topic \"%s\"...\r\n", topic1);
+
+    mqtt_publish(mqtt_client, topic1, message1, strlen(message1), 1, 0, mqtt_message_published_cb, (void *)topic1);
+}
+
+static void publish_message2(void *ctx)
+{
+	static const char *topic2   = TOPIC3;
+	static const char *message2 = "25";
 
     LWIP_UNUSED_ARG(ctx);
 
@@ -374,6 +417,46 @@ static void publish_message(void *ctx)
 
     mqtt_publish(mqtt_client, topic2, message2, strlen(message2), 1, 0, mqtt_message_published_cb, (void *)topic2);
 }
+#endif
+
+#if defined(DEVICE2) && !defined(DEVICE1)
+static void publish_message1(void *ctx)
+{
+	static const char *topic1   = TOPIC2;
+	static const char *message1 = "Ruido detectado";
+
+    LWIP_UNUSED_ARG(ctx);
+
+    PRINTF("Going to publish to the topic \"%s\"...\r\n", topic1);
+
+    mqtt_publish(mqtt_client, topic1, message1, strlen(message1), 1, 0, mqtt_message_published_cb, (void *)topic1);
+}
+
+static void publish_message2(void *ctx)
+{
+	static const char *topic2   = TOPIC4;
+	static const char *message2 = "SMOKE";
+	static const char *message3 = "NO_SMOKE";
+
+    LWIP_UNUSED_ARG(ctx);
+
+    PRINTF("Going to publish to the topic \"%s\"...\r\n", topic2);
+
+    mqtt_publish(mqtt_client, topic2, message2, strlen(message2), 1, 0, mqtt_message_published_cb, (void *)topic2);
+}
+
+static void publish_message3(void *ctx)
+{
+	static const char *topic2   = TOPIC4;
+	static const char *message3 = "NO_SMOKE";
+
+    LWIP_UNUSED_ARG(ctx);
+
+    PRINTF("Going to publish to the topic \"%s\"...\r\n", topic2);
+
+    mqtt_publish(mqtt_client, topic2, message3, strlen(message3), 1, 0, mqtt_message_published_cb, (void *)topic2);
+}
+#endif
 
 /*!
  * @brief Application thread.
@@ -420,20 +503,80 @@ static void app_thread(void *arg)
     }
 
     /* Publish some messages */
-//    for (i = 0; i < 5;)
-//    {
-//        if (connected)
-//        {
-//            err = tcpip_callback(publish_message, NULL);
-//            if (err != ERR_OK)
-//            {
-//                PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
-//            }
-//            i++;
-//        }
-//
-//        sys_msleep(1000U);
-//    }
+#if defined(DEVICE1) && !defined(DEVICE2)
+    for (i = 0; i < 3;)
+    {
+        if (connected)
+        {
+            err = tcpip_callback(publish_message1, NULL);
+            if (err != ERR_OK)
+            {
+                PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+            }
+            i++;
+        }
+
+        sys_msleep(1000U);
+    }
+    for (i = 0; i < 3;)
+	{
+		if (connected)
+		{
+			err = tcpip_callback(publish_message2, NULL);
+			if (err != ERR_OK)
+			{
+				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+			}
+			i++;
+		}
+
+		sys_msleep(1000U);
+	}
+#endif
+#if defined(DEVICE2) && !defined(DEVICE1)
+    for (i = 0; i < 3;)
+	{
+		if (connected)
+		{
+			err = tcpip_callback(publish_message1, NULL);
+			if (err != ERR_OK)
+			{
+				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+			}
+			i++;
+		}
+
+		sys_msleep(1000U);
+	}
+    for (i = 0; i < 3;)
+	{
+		if (connected)
+		{
+			err = tcpip_callback(publish_message2, NULL);
+			if (err != ERR_OK)
+			{
+				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+			}
+			i++;
+		}
+
+		sys_msleep(1000U);
+	}
+    for (i = 0; i < 3;)
+	{
+		if (connected)
+		{
+			err = tcpip_callback(publish_message3, NULL);
+			if (err != ERR_OK)
+			{
+				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+			}
+			i++;
+		}
+
+		sys_msleep(1000U);
+	}
+#endif
 
     vTaskDelete(NULL);
 }
@@ -442,7 +585,7 @@ static void button_pressed_callback(void)
 {
     if (connected)
     {
-        err_t err = tcpip_callback(publish_message, NULL);
+        err_t err = tcpip_callback(publish_message1, NULL);
         if (err != ERR_OK)
         {
             PRINTF("Failed to invoke publishing of temperature message: %d.\r\n", err);
@@ -528,6 +671,7 @@ void mqtt_freertos_run_thread(struct netif *netif)
     }
 
     LED_Init();
+    GPIO_PIN_Init();
 
     generate_client_id();
 
@@ -536,3 +680,4 @@ void mqtt_freertos_run_thread(struct netif *netif)
         LWIP_ASSERT("mqtt_freertos_start_thread(): Task creation failed.", 0);
     }
 }
+

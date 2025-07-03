@@ -11,12 +11,12 @@
 
 #include "lwip/netif.h"
 
-#define DEVICE1
+//#define DEVICE1
 
-//#define DEVICE2
+#define DEVICE2
 
 #if defined(DEVICE1) && !defined(DEVICE2)
-#define TOPIC1 "movement_detect"
+#define TOPIC1 "motion_detect"
 #define TOPIC3 "temp_measure"
 #define TOPIC4 "smoke_detect"
 #define TOPIC6 "night_light"
