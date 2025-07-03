@@ -543,6 +543,7 @@ static void app_thread(void *arg)
 				{
 					PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
 				}
+				sys_msleep(1000);
 			}
 			else if (BUTTON_IsPressed(BTN_GPIO_7)){
 				if(i == 1){
@@ -561,6 +562,7 @@ static void app_thread(void *arg)
 					}
 					i = 1;
 				}
+				sys_msleep(1000);
 			}
     	}
     }
