@@ -87,6 +87,8 @@ static volatile bool connected = false;
 uint8_t received_topic;
 
 uint8_t r,g,b;
+
+uint8_t temp = 20;
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -410,7 +412,9 @@ static void publish_message1(void *ctx)
 static void publish_message2(void *ctx)
 {
 	static const char *topic2   = TOPIC3;
-	static const char *message2 = "25";
+	char message2[] = "22";
+	message2[0] = (temp / 10) + 0x30;
+	message2[1] = (temp % 10) + 0x30;
 
     LWIP_UNUSED_ARG(ctx);
 
@@ -505,34 +509,27 @@ static void app_thread(void *arg)
 
     /* Publish some messages */
 #if defined(DEVICE1) && !defined(DEVICE2)
-    for (i = 0; i < 3;)
-    {
-        if (connected)
-        {
-            err = tcpip_callback(publish_message1, NULL);
-            if (err != ERR_OK)
-            {
-                PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
-            }
-            i++;
-        }
-
-        sys_msleep(1000U);
-    }
-    for (i = 0; i < 3;)
-	{
-		if (connected)
-		{
-			err = tcpip_callback(publish_message2, NULL);
-			if (err != ERR_OK)
-			{
-				PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+    while(1){
+		if(connected){
+			if (BUTTON_IsPressed(BTN_GPIO_19)){
+				err = tcpip_callback(publish_message1, NULL);
+				if (err != ERR_OK)
+				{
+					PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+				}
+				sys_msleep(500);
 			}
-			i++;
+			else if (BUTTON_IsPressed(BTN_GPIO_7)){
+				err = tcpip_callback(publish_message2, NULL);
+				if (err != ERR_OK)
+				{
+					PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
+				}
+				(temp == 33) ? (temp = 23) : (temp++);
+				sys_msleep(500);
+			}
 		}
-
-		sys_msleep(1000U);
-	}
+    }
 #endif
 #if defined(DEVICE2) && !defined(DEVICE1)
     while(1){
@@ -543,7 +540,7 @@ static void app_thread(void *arg)
 				{
 					PRINTF("Failed to invoke publishing of a message on the tcpip_thread: %d.\r\n", err);
 				}
-				sys_msleep(1000);
+				sys_msleep(500);
 			}
 			else if (BUTTON_IsPressed(BTN_GPIO_7)){
 				if(i == 1){
@@ -562,7 +559,7 @@ static void app_thread(void *arg)
 					}
 					i = 1;
 				}
-				sys_msleep(1000);
+				sys_msleep(500);
 			}
     	}
     }
