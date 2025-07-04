@@ -382,7 +382,7 @@ static void main_task(void *arg)
 
     PRINTF(
         "\r\n"
-        "Starting webconfig DEMO\r\n");
+        "Starting webconfig\r\n");
 
     /* When the App starts up, it will first read the mflash to check if any
      * credentials have been saved from previous runs.
@@ -524,6 +524,7 @@ static uint32_t CleanUpAP()
         while (1)
             __BKPT(0);
     }
+    mqtt_freertos_run_thread(netif_default);
 
     return 0;
 }
